@@ -45,6 +45,7 @@ export default {
       }).then(res => res.json()).then(res => {
         if (res) {
           this.$message.success("下单成功")
+          this.load()
         } else {
           this.$message.error("下单失败")
         }

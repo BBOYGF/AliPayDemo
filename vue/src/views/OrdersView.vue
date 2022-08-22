@@ -11,8 +11,8 @@
       <el-table-column label="订单状态" prop="state" />
       <el-table-column label="操作">
         <template v-slot="scope">
-          <el-button @click="buy(scope.row.id)" type="primary" size="small">支付</el-button>
-          <el-button @click="cancel(scope.row.id)" type="danger" size="small">取消</el-button>
+          <el-button @click="pay(scope.row)" type="primary" size="small" :disabled="scope.row.state">支付</el-button>
+          <el-button @click="cancel(scope.row.id)" type="danger" size="small" :disabled="scope.row.state">取消</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -36,7 +36,16 @@ export default {
       fetch(baseUrl + '/api/orders').then(res => res.json()).then(res => {
         this.tableData = res
       })
-    }
+    },
+    pay(row) {
+      window.open("http://localhost:9090/alipay/pay?subject=" + row.name + "&traceNo=" + row.orderId + "&totalAmount=" + row.total)
+      this.$message.success("请求支付宝成功")
+    },
+    cancel(row) {
+      fetch(baseUrl + '/api/orders').then(res => res.json()).then(res => {
+        this.tableData = res
+      })
+    },
   }
 }
 </script>
