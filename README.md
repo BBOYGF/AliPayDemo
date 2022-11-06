@@ -194,9 +194,14 @@ public class AliPayController {
 
 
 ## 实现回调功能
-- 加配置：alipay.returnUrl=http://localhost:8000/orders
+
+- 加配置(前端支付页面的地址)：alipay.returnUrl=http://localhost:8080/orders
 - AlipayConfig.java 加一个属性：returnUrl
 - AliPayController.java的pay接口设置回调的url：request.setReturnUrl(aliPayConfig.getReturnUrl());
+
+## 页面调用
+
+window.open('http://localhost:9090/alipay/pay?traceNo=' + row.orderNo + "&totalAmount=" + row.price + '&subject=' + row.name)
 
 以上即全部的内容，配置完之后就可以实现了
 
