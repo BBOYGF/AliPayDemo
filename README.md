@@ -81,7 +81,7 @@ import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.example.alipay.common.AlipayConfig;
+import com.example.alipay.common.AliPayConfig;
 import com.example.alipay.dao.OrdersMapper;
 import com.example.alipay.entity.Orders;
 import org.springframework.web.bind.annotation.GetMapping;
