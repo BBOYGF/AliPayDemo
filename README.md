@@ -109,7 +109,7 @@ public class AliPayController {
     private static final String SIGN_TYPE = "RSA2";
 
     @Resource
-    private AlipayConfig aliPayConfig;
+    private AliPayConfig aliPayConfig;
 
     @Resource
     private OrdersMapper ordersMapper;
