@@ -6,6 +6,9 @@ import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.alipay.api.request.AlipayTradePrecreateRequest;
+import com.alipay.api.response.AlipayTradePagePayResponse;
+import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.alipay.common.AlipayConfig;
 import com.example.alipay.dao.OrdersMapper;
@@ -28,7 +31,7 @@ import java.util.Map;
 @RequestMapping("/alipay")
 public class AliPayController {
 
-    private static final String GATEWAY_URL = "https://openapi.alipaydev.com/gateway.do";
+    private static final String GATEWAY_URL = "https://openapi-sandbox.dl.alipaydev.com/gateway.do";
     private static final String FORMAT = "JSON";
     private static final String CHARSET = "UTF-8";
     //签名方式
@@ -48,18 +51,24 @@ public class AliPayController {
 
         // 2. 创建 Request并设置Request参数
         AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();  // 发送请求的 Request类
+        // 二维码方式
+//        AlipayTradePrecreateRequest request = new AlipayTradePrecreateRequest();
         request.setNotifyUrl(aliPayConfig.getNotifyUrl());
-        request.setReturnUrl(aliPayConfig.getReturnUrl());
+//        request.setReturnUrl(aliPayConfig.getReturnUrl());
         JSONObject bizContent = new JSONObject();
         bizContent.set("out_trade_no", aliPay.getTraceNo());  // 我们自己生成的订单编号
         bizContent.set("total_amount", aliPay.getTotalAmount()); // 订单的总金额
         bizContent.set("subject", aliPay.getSubject());   // 支付的名称
-        bizContent.set("product_code", "FAST_INSTANT_TRADE_PAY");  // 固定配置
+//        bizContent.set("product_code", "FAST_INSTANT_TRADE_PAY");  // 固定配置
         request.setBizContent(bizContent.toString());
 
         // 执行请求，拿到响应的结果，返回给浏览器
         String form = "";
         try {
+            // 二维码方式
+//            AlipayTradePrecreateResponse execute = alipayClient.execute(request);
+//            form = execute.getBody();
+            // 支付界面及二维码方式
             form = alipayClient.pageExecute(request).getBody(); // 调用SDK生成表单
         } catch (AlipayApiException e) {
             e.printStackTrace();
