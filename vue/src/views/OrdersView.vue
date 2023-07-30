@@ -38,7 +38,7 @@ export default {
       })
     },
     pay(row) {
-      window.open("http://localhost:9090/alipay/pay?subject=" + row.name + "&traceNo=" + row.orderId + "&totalAmount=" + row.total)
+      window.open("http://localhost:9090/alipay/payUrl?subject=" + row.name + "&traceNo=" + row.orderId + "&totalAmount=" + row.total)
       this.$message.success("请求支付宝成功")
     },
     cancel(row) {

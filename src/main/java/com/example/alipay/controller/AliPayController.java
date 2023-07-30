@@ -1,6 +1,7 @@
 package com.example.alipay.controller;
 
 import cn.hutool.json.JSONObject;
+import com.alibaba.fastjson.JSON;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
@@ -12,6 +13,7 @@ import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.alipay.common.AlipayConfig;
 import com.example.alipay.dao.OrdersMapper;
+import com.example.alipay.entity.AliPayResponse;
 import com.example.alipay.entity.Orders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,38 +46,88 @@ public class AliPayController {
     @Resource
     private OrdersMapper ordersMapper;
 
-    @GetMapping("/pay") // &subject=xxx&traceNo=xxx&totalAmount=xxx
-    public void pay(AliPay aliPay, HttpServletResponse httpResponse) throws Exception {
+
+    /**
+     * 二维码支付
+     *
+     * @param aliPay       阿里pay
+     * @param httpResponse 响应
+     * @throws Exception 异常
+     */
+    @GetMapping("/payQR") // &subject=xxx&traceNo=xxx&totalAmount=xxx
+    public String payQR(AliPay aliPay, HttpServletResponse httpResponse) throws Exception {
         // 1. 创建Client，通用SDK提供的Client，负责调用支付宝的API
         AlipayClient alipayClient = new DefaultAlipayClient(GATEWAY_URL, aliPayConfig.getAppId(),
                 aliPayConfig.getAppPrivateKey(), FORMAT, CHARSET, aliPayConfig.getAlipayPublicKey(), SIGN_TYPE);
 
         // 2. 创建 Request并设置Request参数
-        AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();  // 发送请求的 Request类
         // 二维码方式
-//        AlipayTradePrecreateRequest request = new AlipayTradePrecreateRequest();
+        AlipayTradePrecreateRequest request = new AlipayTradePrecreateRequest();
         request.setNotifyUrl(aliPayConfig.getNotifyUrl());
-//        request.setReturnUrl(aliPayConfig.getReturnUrl());
+        request.setReturnUrl(aliPayConfig.getReturnUrl());
         JSONObject bizContent = new JSONObject();
-        bizContent.set("out_trade_no", aliPay.getTraceNo());  // 我们自己生成的订单编号
-        bizContent.set("total_amount", aliPay.getTotalAmount()); // 订单的总金额
-        bizContent.set("subject", aliPay.getSubject());   // 支付的名称
-//        bizContent.set("product_code", "FAST_INSTANT_TRADE_PAY");  // 固定配置
+        // 我们自己生成的订单编号
+        bizContent.set("out_trade_no", aliPay.getTraceNo());
+        // 订单的总金额
+        bizContent.set("total_amount", aliPay.getTotalAmount());
+        // 支付的名称
+        bizContent.set("subject", aliPay.getSubject());
         request.setBizContent(bizContent.toString());
 
         // 执行请求，拿到响应的结果，返回给浏览器
         String form = "";
         try {
             // 二维码方式
-//            AlipayTradePrecreateResponse execute = alipayClient.execute(request);
-//            form = execute.getBody();
+            AlipayTradePrecreateResponse response = alipayClient.execute(request);
+            form = response.getBody();
+            AliPayResponse aliPayResponse = JSON.parseObject(form, AliPayResponse.class);
+            if ("10000".equals(aliPayResponse.getAlipayTradePrecreateResponse().getCode())) {
+                return aliPayResponse.getAlipayTradePrecreateResponse().getQrCode();
+            } else if ("40004".equals(aliPayResponse.getAlipayTradePrecreateResponse().getCode())) {
+                return "订单已支付";
+            }
+            return "支付失败";
             // 支付界面及二维码方式
-            form = alipayClient.pageExecute(request).getBody(); // 调用SDK生成表单
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+        return "支付失败";
+    }
+
+    // ?subject=购买鼠标订单&traceNo=202307091688903243739&totalAmount=50
+    @GetMapping("/payUrl")
+    public void payUrl(AliPay aliPay, HttpServletResponse httpResponse) throws IOException {
+        // 1. 创建Client，通用SDK提供的Client，负责调用支付宝的API
+        AlipayClient alipayClient = new DefaultAlipayClient(GATEWAY_URL, aliPayConfig.getAppId(),
+                aliPayConfig.getAppPrivateKey(), FORMAT, CHARSET, aliPayConfig.getAlipayPublicKey(), SIGN_TYPE);
+
+        // 2. 创建 Request并设置Request参数
+        AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();  // 发送请求的 Request类
+
+        request.setNotifyUrl(aliPayConfig.getNotifyUrl());
+        request.setReturnUrl(aliPayConfig.getReturnUrl());
+        JSONObject bizContent = new JSONObject();
+        // 我们自己生成的订单编号
+        bizContent.set("out_trade_no", aliPay.getTraceNo());
+        // 订单的总金额
+        bizContent.set("total_amount", aliPay.getTotalAmount());
+        // 支付的名称
+        bizContent.set("subject", aliPay.getSubject());
+        // 固定配置
+        bizContent.set("product_code", "FAST_INSTANT_TRADE_PAY");
+        request.setBizContent(bizContent.toString());
+
+        // 执行请求，拿到响应的结果，返回给浏览器
+        String form = "";
+        try {
+            // 调用SDK生成表单
+            form = alipayClient.pageExecute(request).getBody();
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
         httpResponse.setContentType("text/html;charset=" + CHARSET);
-        httpResponse.getWriter().write(form);// 直接将完整的表单html输出到页面
+        // 直接将完整的表单html输出到页面
+        httpResponse.getWriter().write(form);
         httpResponse.getWriter().flush();
         httpResponse.getWriter().close();
     }
